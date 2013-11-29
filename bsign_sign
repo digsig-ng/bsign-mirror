@@ -1,0 +1,36 @@
+#!/bin/sh
+# $Id: bsign_sign,v 1.4 2002/01/27 18:44:09 elf Exp $
+#
+# Add hashes and signatures to unsigned executables.
+#
+# This script is intented to be put onto a floppy diskette along with
+# the secret key used to sign the system ELF files.
+#
+
+# --- Start of customization macros
+
+# BASE_PATH is the absolute pathname where this script and bsign will
+#   be found.
+
+BASE_PATH=/floppy
+
+# KEY_PATH is the absolute pathname where the public key will be
+#   found.  Note that the default key from the pubring.gpg file will
+#   be used.
+
+KEY_PATH=$BASE_PATH
+
+# LOCATIONS gives the path includes and excludes that guide where
+#   bsign looks for input files.  
+
+LOCATIONS=-i / -e /boot  -e /cdrom -e /dev -e /proc -e $BASE_PATH
+
+# --- End of customization macros
+
+# Prevent library loading tricks
+LD_LIBRARY_PATH=
+export LD_LIBRARY_PATH
+
+# Perform
+
+$BASE_PATH/bsign -s -I -v $LOCATIONS -P "--homedir $KEY_PATH" 

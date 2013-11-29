@@ -1,0 +1,71 @@
+bsign (0.4.5) unstable; urgency=low
+
+  * Recast the signature data pointer to prevent inappropriate sign
+    extension.  
+
+ -- Marc Singer <elf@buici.com>  Wed,  6 Aug 2003 14:35:54 -0700
+
+bsign (0.4.4) unstable; urgency=low
+
+  * Removed install dependency on gpg so that bsign can install in main.  
+  * Detect absence of gnupg when running commands that require it.
+
+ -- Marc Singer <elf@buici.com>  Tue, 29 Jan 2002 15:26:00 -0800
+
+bsign (0.4.3) unstable; urgency=low
+
+  * Tested/fixed the bsign_ scripts.
+  * Enhanced summary.
+
+ -- Marc Singer <elf@buici.com>  Sun, 27 Jan 2002 10:46:02 -0800
+
+bsign (0.4.2) unstable; urgency=low
+
+  * Reopened project after long hiatus.  Need identified to use it, so
+    there's a need to complete the work.  Shouldn't be too difficult since
+    the signing has always worked.  It's UI polish that was missing. 
+  * Fixed handling of temporary files and signals so that no temporaries
+    are left behind.
+  * Fixed the dup_status function so that setuid bit isn't cleared.
+  * Added fts_ enumeration mode and unified all of the enumeration into a
+    class. 
+  * Made some changes to the file processing to avoid mmap'ing files until
+    we know that we will be reading the whole file.
+  * No longer resigning by default.
+  * Summary option.
+  * Rewrote man page to reflect new options and to be more clear. 
+  * Added scripts to demonstrate use on productionsystem.
+  * Improved the handling of informational messages and exit codes so that
+    email of output is useful.
+  * Changed semantics of command line to be more obvious.  The problem was
+    that the switches were interpreted in order.  If a filename appeared
+    before the command, bsign wouldn't know what command to execute.  Now,
+    all options are read before starting work.
+  * Fixed the replace_file function so that there is no opportunity to
+    lose a file.
+
+ -- Marc Singer <elf@buici.com>  Thu, 17 Jan 2002 14:14:08 -0800
+
+bsign (0.2.0) unstable; urgency=low
+
+  * Edits to README. 
+  * Appear to be some bug fixes, too.
+
+ -- Marc Singer <elf@buici.com>  Fri,  5 May 2000 09:49:16 -0700
+
+bsign (0.1.7) unstable; urgency=low
+
+  * Disabled echo on passphrase read.  Less paranoid about elf'ness when
+    reading segments.  
+  
+  * bss (NOBITS) section can have any durn offset it wants. 
+
+ -- Oscar Levi <elf@buici.com>  Mon, 14 Dec 1998 01:07:44 -0800
+
+bsign (0.1.6) unstable; urgency=low
+
+  * First public release.  Digital signature only by GNUPG.
+
+ -- Oscar Levi <elf@buici.com>  Sat, 12 Dec 1998 12:14:35 -0800
+
+

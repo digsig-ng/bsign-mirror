@@ -1,0 +1,4 @@
+#!/bin/sh
+
+find $1 -type f -perm +0100 -exec bsign --unsigned -q \{\} \; -print
+

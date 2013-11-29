@@ -1,0 +1,33 @@
+#!/bin/sh
+# $Id: bsign_check,v 1.1 2002/01/27 20:49:04 elf Exp $
+#
+# Verify hashes.  Send results by email.
+#
+
+# --- Start of customization macros
+
+# LOCATIONS gives the path includes and excludes that guide where
+#   bsign looks for input files.  
+
+LOCATIONS=-i / -e /boot  -e /cdrom -e /dev -e /proc -e $BASE_PATH
+
+# MAIL_TO is the list of email addresses that will receive email when
+#   this script terminates.  The mail will contain the output of
+#   bsign. 
+
+MAIL_TO=root
+
+# MAIL_PROG is the program to call to send mail 
+
+MAIL_PROG=mailx
+
+# --- End of customization macros
+
+# Prevent library loading tricks
+LD_LIBRARY_PATH=
+export LD_LIBRARY_PATH
+
+# Perform
+
+$BASE_PATH/bsign -c -I -G $LOCATIONS \
+  | $MAIL_PROG -s "`hostname -f` bsign log" $MAIL_TO

@@ -1,0 +1,22 @@
+Begin3
+Title:          bsign - embed hash and signature in elf executables
+Version:	<<version>>
+Entered-date:	<<date>>
+Description:    The purpose of bsign is to verify and authenticate
+		data files, especially executables.  It rewrites ELF
+		executables, embedding a segment with a hash and
+		perhaps a signature.  The original motive for
+		developing bsign was to discover files corrupted by
+		faulty computer hardware.  The authentication feature
+		was an obvious enhancement.
+Keywords:       GPG SHA1 embedded hash digital signature ELF
+Author:         elf@buici.com (Marc Singer)
+Maintained-by:  elf@buici.com (Marc Singer)
+Primary-site:   ftp.buici.com /pub/bsign
+		<<tar-file>>
+		<<lsm-file>>
+Platforms:      Any UN*X.  Tested on GNU/Linux and Solaris.
+		C++ necessary to build from source.  
+		CVS and possibly RCS to use.   
+Copying-policy: GPL
+End

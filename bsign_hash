@@ -1,0 +1,22 @@
+#!/bin/sh
+# $Id: bsign_hash,v 1.1 2002/01/27 20:49:04 elf Exp $
+#
+# Add hashes to unhashed executables.
+#
+
+# --- Start of customization macros
+
+# LOCATIONS gives the path includes and excludes that guide where
+#   bsign looks for input files.  
+
+LOCATIONS=-i / -e /boot  -e /cdrom -e /dev -e /proc
+
+# --- End of customization macros
+
+# Prevent library loading tricks
+LD_LIBRARY_PATH=
+export LD_LIBRARY_PATH
+
+# Perform
+
+bsign -H -I -v $LOCATIONS

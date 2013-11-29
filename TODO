@@ -1,0 +1,148 @@
+TODO
+----
+
+- Stream-ify sha code.  There is code from Cerberus to do sha that is
+  already streamified.  We could use theirs if their license did not
+  prohibit commercial use.
+  * using gnupg code.  Already streamified and under GPL.
+- Craft section contents.  I suspect I need to store the original
+  header so it is easy to determine which fields I changed.  Or!, I
+  could store a precomputed hash of the original header and use this
+  to initialize the hash for the rest of the file.  This means that
+  I'll also want to hash the new header and store that so I can tell
+  if the header was changed *after* me.
+
+   (SHA) original header
+   (SHA) new header
+   (SHA) original file
+
+  I think I want an ASCII format so it is easy to extend and maintain.
+
+   hash_header_original = (SHA) ...
+   hash_header_modified = (SHA) ...
+   hash_file_original = (SHA) ...
+
+  Also, if we sign this, it is easy to make sense of the signature and
+  maintain readability and extensibility of the hash data.  If someone
+  gripes about space, we can always compress it with zlib.
+
+  We may want to add a few other items to help us detect why a file
+  has changed.  For example, timestamps, ownership.
+
+  * Our present algorithm is simplified to accomodate the signature
+    data and to be able to sign and resign the same program, we have a
+    straightforward hash which is the the hash of the file, rewritten
+    to accomodate a section large enough for the signature initialized
+    to nulls.  There is only one entry in the data.
+
+- Need to decide if we will use BFD library or if we will simply write
+  the file using our knowledge of the format.  I suspect the latter
+  will be acceptably easy.
+  * Presently, we use our own code which is simple and fast and effective.
+  * BFD code means portability.  It also means that the statically
+    linked executable is going to be huge.  Also, we need to make sure
+    we are portable.
+
+- If we compress the data, there is a chicken/egg paradox in that the
+  exact size cannot be known until we compress.  So, either we guess,
+  or we attempt to converge.  I believe that compression will
+  therefore be unlikely.  Also, I suspect that the space saving will be
+  insignificant since disk blocks are allocated on 1K boundaries.
+  * We don't compress.  We *do* need to add hooks to estimate the
+    amount of signature data. 
+  ** Although this isn't crucial as long as we know that a signature
+     fits in 1/2K.  If we every go to recursive signatures, this may
+     need revision.
+
+- May be interesting to be able to store the certs external to files,
+  too.  I like embedded ones for exe's because we can say for certain
+  that a given binary file is good.  Certs embedded in text files?  We
+  could establish a method for supporting this.  For example, some
+  files have a comment structure that makes it possible to embed our
+  data there.  Also, these would be less sensitive to compression
+  because there is no header.  Thus, we could sign a text file with a
+  signature only.  Or we could continue to use our hash_original and
+  sign just the hash.
+
+- Does signing many short messages affect the permeability of a public
+  encryption key?
+  * Apparently we don't need to worry about this as long as the hash
+    collisions are unpredictable.
+
+- Need to finish out the command interface to let us rewrite a file
+  and keep the same name, to rewrite to another file, and to verify
+  the signature.  I think the latter should be the default.  Also,
+  need to check that permissions, ownerships, and timestamps are
+  perserved.  Don't forget that we want to store timestamps in the
+  hashed data section so that signing it is interesting.  All in all,
+  we are now very close.
+  ** done
+
+- Think about other fields we may want to put in the hash.  Dates?
+  Who signed?  Are these accomodated by the pgp? gpg?
+  * We could, perhaps, grab these from the cert.  If not, we can
+    easily extract them at the time of signing.  I know that the date,
+    for example, is in the cert.  We could probably just extract
+    this.  However, if we don't embed a cert, we need to generate this
+    data and store it.
+
+- Need to think about return codes:
+  0: OK, success
+  1: Signature invalid
+  2: Hash invalid
+  3: Unsigned, no hash or signature
+  4: No digital signature found and its presence is required by
+     command line option.
+  5: File not elf (or other signable format).
+  ** I think that this is done.
+  
+- Accept '--output -'
+- Configure script is VERY inadequate
+- Need to hide pass phrase.  Need to cache pass phrase if this isn't
+  already done. ** done
+* Need to implement PGP as well as more options for handling the
+  specific signature ID used.  ** I think that the ID problem is
+  handled by -P. 
+- Should be able to accept a list of filenames on stdin and only sign
+  those that are elf.  This means we can do a find on a drive and sign
+  everything in one pass.  **added, -f
+- It would be cool to write a script to check all of the elf files and
+  generate a list of the unsigned files.  ** available with -V and -f
+  options  
+- Would be cool to accept default key ID for selecting the proper
+  key.  In fact, it would be good to accept a slew of gpg options,
+  perhaps as a parenthetic option. ** added as --pgoptions
+- Link resolution appears to be broken.  I cannot sign /proc/#/exe
+  which ought to work when we follow links. ** fixed
+- We leave temporaries around when something goes wrong.  It may be
+  because the file isn't ELF. ** fixed
+- We leave temporaries around when we catch a signal.  What do we do
+  here?  Perhaps the best method would be to have a list of
+  temporaries available to the kill handler.  ** fixed
+- Option to ignore links **added
+- ls-2.0.7.so won't sign **fixed
+* Workflow scripts
+  - Sign or resign everything and 'telinit -u' if init was signed.
+  - Check signatures and report (email) the unsigned ones to root.
+  - Sign unsigned files from a list.
+  - Sign all unsigned files.
+- *** signature check shouldn't change atime.
+
+== 2002.01.16
+
+  - Check portability on debian machines.  64 bit as well as other
+    endian.   Can we sign other architectures.
+    - 64 bit requires better knowledge of the format.  Perhaps we need
+      to augment the I/O away from structures to a programatic form.
+    - Endianness is broken, but this ought to be a simple thing to fix.
+    - Can prevent corruption and release anyway since ia64 isn't that
+      important, and the endian fix isn't necessary, either.
+  - Rewrite the readme to explain the scripts and how to perform
+    setup.
+  - Output when we are signing and we find a file already signed
+    doesn't appear to match the switches.  IOW, we see the skip message
+  - **** Release to Debian when above issues are resolved.
+  - Check on performance.  Make sure that signature speed is really
+    limited by gnupg.
+  - Check on replacement of gpg with libgcrypt.
+  

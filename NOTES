@@ -1,0 +1,78 @@
+- hash_elf
+   generates a signature section for a ELF file.  The algorithm
+   rewrites the file, removing the old signature if there was one,
+   hashes this portion, and appends the new signature to the end.
+   This depends only on us knowning the length of the cert.  In
+   theory, we could put our signature section anywhere in the file,
+   but this layout is convenient at the time.  The most likely
+   enhancement from here would be the ability to update a signature in
+   place, making this function more efficient, and making the hashing
+   a little more difficult.
+
+   Note that if we indend to use digital certificates, we can 
+   support signature in the middle of the file by setting the
+   signature section to known contents, nulls perhaps.
+
+- Signing /sbin/init
+  
+  Due to the way the reboot happens, signing init will prevent the
+  system from a clean reboot.  I suspect this is because signing
+  replaces the file on disk in a way that init cannot detect.  It
+  (kernel or init) thinks that the filesystem carrying init is busy
+  and won't mark the partition as clean.  There are a couple of
+  solution.  We can 'telinit -u' to restart init and reload from
+  disk.  This is shown to work on Linux.  We can also prevent
+  resigning executables with already valid signatures.  Thus
+  preventing the problem in the future.  
+
+- Performance improvements
+  - It may make things faster if we didn't mmap whole files until we
+    are convinced that we are going to rewrite the file.  In fact, I
+    am sure this is one of the things that makes the program slow. 
+  - It isn't clear that this is the bottleneck.  Certainly we could
+    perform signature rewrite in place, but that isn't the critical
+    path.  It appears that the performance problem is due to gpg.
+    Hash check seems to be speedy as is hash write. 
+
+- Bugs
+  - The semantics of the -f switch mean that switches that follow it
+    will not be processed before the files are read.  Either eliminate
+    the method (prefering fts), or postpose these arguments until the
+    other arguments have been processed.  Or document the dependency
+    well.
+    - Like to handle this with an insert method to FileWalk where we
+      add files from the command line to the object.  Also, we can
+      implement the -f flag the same way.  Nice.
+    ** fixed
+  - Need ^C protection.  Need to unlink temporaries.  Need to make
+    sure we don't lose a file due to the small window of opportunity
+    given when we do the rename swap.
+    ** done
+  - Need to detect the unavailability of the gpg program.  There is
+    some logic to do this, but it is weak.  It would be better to use
+    the libgcrypt library since that solves two problems.  
+
+
+- Non-x86
+  - Need to verify that the bsign code handles other architectures
+    properly.  I don't believe so based on the g_fOppositeSex flag set in
+    bsign.cxx.  Fortunately, we have debian machines to test against.
+
+- Considerations
+  - Consider changing the name of the section from "signature" to
+    "bsignature" so as to prevent confusion.  Perhaps.
+  - Check the ramifications of signing kernel modules.  Does the
+    signature get loaded.  
+  - Replace all of the temp file handling with tmpfile.  It will not
+    leave skid-marks.  It isn't that easy.  We are using temp files
+    during the replace_file process that we need to be able to
+    rename and that we intend to make permanent.
+    *** solved in another way.  The warning is gone and we are now
+    using a signal catcher to perform cleanup.
+  - Do we a) require root.  or b) check for proper status replication.
+    a) no.  We generate an error if we cannot reproduce a file's
+    permissions or cannot write in a given directory.  This is the
+    most friendly way.
+    b) I'm not sure that we have a problem here.  The dup_status
+    function appears to work now that it is changed to set the owner
+    before the permissions.

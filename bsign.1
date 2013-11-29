@@ -1,0 +1,210 @@
+.TH bsign 1 16-Jan-2001 Debian
+.SH NAME
+bsign \- embed and verify secure hashes and digital signatures
+.SH SYNOPSIS
+\fBbsign\fR [ \fIoptions\fR | \fIFILENAMES\fR ]
+
+
+.SH DESCRIPTION
+
+The goal purpose of \fBbsign\fR is to verify and authenticate data
+files, especially executables and other binaries.  
+
+The program reads all of the \fIoptions\fR and \FIFILENAMES\fR from
+the command line and then begins to operate on the input files.  In
+one invocation in can only one of either hash files, sign files, check
+hashes, or check signatures. 
+
+At present, it only works with the ELF (Execution and Link Format)
+files used by several flavors of UN*X including GNU/Linux, and it only
+supports gpg for creating and verifying signatures.  It embeds a
+secure hash of the file contents in the file and optionally signs this
+hash value.  Any change in the file contents will be easily
+discovered.  Either the hash value does not match the file contents,
+the hash is absent, the signature (optional) of the hash value is
+invalid, ir the signature (optional) is absent.
+
+.SH COMMANDS
+
+One of these commands must be present.  Only the last one on the
+command line will be recognized.
+
+.TP
+\-c, \-\-checkhash
+Verify the embedded hash value.
+.TP
+\-H, \-\-hash
+Rewrite the input files with a hash.
+.TP
+\-s, \-\-sign
+Rewrite the input files with signed hash data.  Note that the while rewriting
+process will fail if generation of the digital signature fails.  If
+no supported facility for creating signatures is available, only the
+\-\-hash method will work.
+.TP
+\-V, \-\-verify
+Verify the embedded hash value and digital signature.
+.TP
+\-\-version
+Display program version.
+.TP
+\-h, \-\-help
+Display program options and usage information.
+
+.SH OPTIONS
+
+.TP
+\-d, \-\-debug
+Enable the display of debug messages.
+.TP
+\-e, \-\-exclude \fIPATH\fR
+Add \fIPATH\fR to the list of directories to exclude for input files, it may
+be used more than once.  A trailing path separator ('/') will be
+ignored.
+.TP
+\-f, \-\-files \fIFILE\fR
+Process filenames in \fIFILE\fR, one per line.  Use filename \- for standard
+input.  This options has the same effect as putting each line in FILE
+on the command line as a distinct word.
+.TP
+\-\-force\-resign 
+By default, \fBbsign\fR will not resign a file if there is already a
+signature section present.  Note that this means it won't resign a
+file that has been hashed without a signature, too.  This option will
+override that behavior, replacing the existing signature block.
+.TP
+\-G, \-\-ignore\-good\-sigs
+Inhibit information messages about finding good signatures.  This
+option is helpful when verifying from a cron script where all files
+are expected to have good signatures.  Messages about missing or
+broken signatures are unaffected by \-\-ignore-good-sigs.
+.TP
+\-i, \-\-include \fIPATH\fR
+Add \fIPATH\fR to the list of directories to search for input files, it may
+be used more than once.  This method will tend to be faster and
+simpler than using the \fBfind\fR program to generate a list of
+filenames.
+.TP
+\-I, \-\-ignore\-unsupported
+Ignore directories and non-ELF files in error messages.  This option
+reduces bsign output.
+.TP
+\-\-nosymlinks
+Treat symlinks as an unsupported file type.  This prevents some files
+from being signed redundantly.
+.TP
+\-o, \-\-output \fIFILE\fR
+Write signed, rewritten version of the input file to \fIFILE\fR.  Without
+this option, the input file is replaced by the rewritten version.
+The --output option only works when there is a single input filename
+on the command line.  
+.TP
+\-P, \-\-pgoptions \fIOPTS\fR
+Pass \fIOPTS\fR to gpg as command lines options.  This is helpful for
+telling gpg where to find keys.
+.TP
+\-q, \-\-quiet
+Inhibit informational messages.  With this option, the result of
+executing \fBbsign\fR is known only by checking the return status.
+.TP
+\-S, \-\-summary 
+Print a summary after processing the last input file.  At the  moment,
+it only tracks the total number of input files reviewed.
+.TP
+\-v, \-\-verbose
+Report details about program progress. 
+
+
+.SH RETURN VALUE
+
+The program return value reflects the result from the last file
+processed.  Therefore, it is most useful when processing a single
+file.  It returns zero when successfully signing or hashing a file, or
+when the signature or hash is found to be present and valid.  Return
+codes less than 64 are errno values.  
+
+.IP
+ 0	no error
+.br
+ 1	permission denied
+.br
+ 2	file not found
+.br
+12	no memory
+.br
+21	is directory
+.br
+22	invalid argument
+.br
+24	too many open files
+.br
+26	file busy
+.br
+28	no space on device
+.br
+36	name too long
+.br
+64	no hash found
+.br
+65	no signature found
+.br
+66	bad hash found
+.br
+67	bad signature found
+.br
+68	unsupported file type
+.br
+69	bad pass phrase
+.br
+70	rewrite failed
+
+.SH USAGE
+ you intend to use bsign only to protect the contents of the
+filesystem against corruption, there is little that must be done aside
+from hashing the files and performing periodic checks for correct hash
+values.  Refer to the \fBEXAMPLES\fR section for some possible
+invocations. 
+
+If you intend to use bsign to detect intrusion, the way is less
+clear.  First, the usual reminder: the security of a system is only as
+strong as the weakest link.  More detailed instructions on how to use
+\fBbsign\fR in this mode may be found in the
+\fB/usr/share/doc/bsign/README\fR file.  
+
+.SH EXAMPLES
+.TP
+bsign --hash \fBfile\fR
+rewrite \fBfile\fR with a hash
+.TP
+bsign --check-hash \fBfile\fR
+verify the hash in \fBfile\fR
+.TP
+bsign --sign \fBfile\fR -P "--homedir \fBkeydir\fR"
+rewrite \fBfile\fR with a hash and sign it with the default secret key
+in \fBkeydir\fR 
+.TP
+bsign --verify \fBfile\fR -P "--homedir \fBkeydir\fR"
+verify the hash and signature in \fBfile\fR using the key in \fBkeydir\fR
+.TP
+bsign --sign -i / -e /proc -I -s --P "--homedir \fBkeydir\fR"
+sign the unsigned files in the whole filesystem
+.TP
+bsign --verify -i / -e /proc -I -G --P "--homedir \fBkeydir\fR"
+verify signatures for all files in the filesystem and only report
+those that have been tampered or are unsigned.
+
+.SH ENVIRONMENT VARIABLES
+
+.B bsign
+should use environment variables to select the method for generating
+digital signatures.  It doesn't.
+
+.SH BUGS
+
+It supports only one hash algorithm, an insignificant bug if one at
+all.  It supports only GNU Privacy Guard for creating and verifying
+digital signatures.  It can embed only in ELF format files, others
+would be helpful.
+
+.SH AUTHOR
+Marc Singer <elf@debian.org>

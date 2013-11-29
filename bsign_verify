@@ -1,0 +1,48 @@
+#!/bin/sh
+# $Id: bsign_verify,v 1.6 2002/01/27 18:44:09 elf Exp $
+#
+# Verify hashes and signatures.  Send results by email.
+#
+# This script is intented to be put onto a floppy diskette along with
+# the public key used to sign the system ELF files. 
+#
+
+# --- Start of customization macros
+
+# BASE_PATH is the absolute pathname where this script and bsign will
+#   be found.
+
+BASE_PATH=/floppy
+
+# KEY_PATH is the absolute pathname where the public key will be
+#   found.  Note that the default key from the pubring.gpg file will
+#   be used.
+
+KEY_PATH=$BASE_PATH
+
+# LOCATIONS gives the path includes and excludes that guide where
+#   bsign looks for input files.  
+
+LOCATIONS=-i / -e /boot  -e /cdrom -e /dev -e /proc -e $BASE_PATH
+#LOCATIONS=-i /bin -i /sbin -i /usr/bin -i /usr/sbin
+
+# MAIL_TO is the list of email addresses that will receive email when
+#   this script terminates.  The mail will contain the output of
+#   bsign. 
+
+MAIL_TO=root
+
+# MAIL_PROG is the program to call to send mail 
+
+MAIL_PROG=mailx
+
+# --- End of customization macros
+
+# Prevent library loading tricks
+LD_LIBRARY_PATH=
+export LD_LIBRARY_PATH
+
+# Perform
+
+$BASE_PATH/bsign -V -I -G $LOCATIONS -P "--homedir $KEY_PATH" \
+  | $MAIL_PROG -s "`hostname -f` bsign log" $MAIL_TO

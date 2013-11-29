@@ -1,0 +1,320 @@
+  =============
+  Bsign README		$Id: README,v 1.10 2002/01/29 23:29:03 elf Exp $
+  =============
+
+  by Marc Singer, elf@buici.com
+  14 January 2002 (last revision) for version <<version>>
+
+  This document serves as an orientation guide to bsign, a program for
+  embedding and verifying hash values and digital signatures.
+
+
+  1.  Introduction
+
+  The original motivation for bsign came from experience maintaining
+  GNU/Linux systems that ran continuously for several years, long
+  enough for hardware failure to be a significant impediment to
+  reliable operation.  The idea was to augment binary files with
+  information necessary to verify data integrity.  The addition of
+  digital signatures is an obvious extension of the same idea and
+  serves the goal of verifying the origin of the hashed file.
+
+  As of the start of 2002, there are two applications that perform
+  system file integrity verification.  Both of them, tripwire and
+  integrit, use a database to store hashes of each file's contents and
+  other information about the file.  Bsign stores the integrity check
+  data in the executables themselves.  As a result, bsign the gpg
+  public key can be stored on a small, read-only medium such as a
+  floppy, guaranteeing the integrity of the check mechanism.
+
+  This release of bsign is in use on production systems.
+
+  Mail questions and comments to the author, elf@buici.com.
+
+
+  1.1.  Copyright
+
+  The bsign program is Copyright (C) 1998,1999,2000,2001,2002 by The
+  Buici Company.  It is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License as
+  published by the Free Software Foundation; either version 2 of the
+  License, or (at your option) any later version.
+
+
+  1.2.  Sources for related programs
+
+  o  GNUPG, the GNU Privacy Guard is the only supported software for
+     creating digital signatures.
+
+       <URL:http://www.gnupg.org/>
+
+  o Tripwire is a program that shares some of the attributes of
+    bsign.  Last time I looked, it generates a potentially large
+    database of hash values for the files on a host which it kept on a
+    removable medium.  I developed bsign after testing tripwire and
+    finding it unsuitable.
+
+      <URL:http://www.tripwire.com>
+
+    Version 2.3 of tripwire is available from the Debian package
+    mirrors.
+
+      apt-get install tripwire
+
+
+   o The Integrit project is hosted by sourceforge.  While I haven't
+     tried it, integrit shares the database feature of tripwire making
+     it unsuitable for a read-only floppy setup.
+ 
+
+  1.3  The most current source for Bsign
+
+  The primary site for Bsign source is Buici.  
+
+    <URL:ftp://ftp.buici.com/pub/bsign>
+
+
+  1.4  Feedback and Bug Reports
+
+  Bug reports may be sent to the author at <elf@buici.com>.  There is
+  a plan to incorporate some form of automatic bug report generation
+  within the application, but until that is available, e-mail is
+  likely to produce a response.  
+
+
+  1.5  Disclaimer
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  General Public License for more details. 
+
+
+  1.6  Known Issues
+
+  o Release 1.0.6 of gpg does not permit signature verification using
+    a key on a read-only medium.  For the time being, the verification
+    diskette must remain writable.
+  o The ELF-64 format is unsupported.  Bsign will fail to sign a ia64
+    and alpha executables.
+  o Cross-platform signing works as long as the endianness of the host
+    and target are the same.  Bsign will fail to sign when the
+    endianness differs.
+  o When gnupg fails, bsign sometimes needs to guess that the reason
+    is that it isn't installed.  Error messages indicate this
+    possibility.  It would be better if bsign checked for the presence
+    of the program explicitly, or if bsign used libgcrypt.
+
+
+  2.  Usage
+
+  There are two modes for using bsign: verifying program integrity,
+  and verifying program authenticity.  In the first mode, bsign embeds
+  a checksum in each executable that is easily verified by bsign.  An
+  error in the checksum indicates corruption.  In second mode, bsign
+  embeds a checksum and then signs it.  The setup for signatures
+  requires a few more steps in order to prevent tampering.
+
+
+  2.1  Signing Executables with Bsign
+
+  The concept of signing executable programs is simple.  Create a gpg
+  key pair.  Sign executables on the target host.  Physically remove
+  the secret key from the machine and leave the public key available
+  on a read-only medium.  Check signatures regularly.  The devil is in
+  missing the details.
+
+  2.1.1  Prepare Key Diskettes
+
+  The paranoid operator will want to start as cleanly as possible.
+  For those running Debian, it is sufficient to install the bsign
+  package.  Otherwise, download the bsign source archive from
+  ftp.buici.com.  Bring the host down to single user mode.
+
+    telinit s
+
+  Build bsign.
+
+    tar zxf bsign_<<version>>.tar.gz
+    cd bsign-<<version>>
+    configure
+    make
+
+  Format and mount a floppy diskette.  Copy the bsign executable to
+  it.  Create a gpg key pair using the diskette as home.  Note that
+  gpg appears to require a complete UNIX filesystem for the homedir.
+  So, I format the diskette for ext2.
+
+    superformat /dev/fd0
+    mke2fs /dev/fd0
+    mount /dev/fd0 /floppy
+    cp bsign bsign_sign /floppy
+    gpg --homedir /floppy --gen-key
+
+  Copy the public key to the hard drive and unmount the floppy
+  diskette.
+
+    mkdir bsignkey
+    cp /floppy/pubring.gpg bsignkey
+    umount /floppy
+
+  Format and mount another diskette.  Copy those files to this floppy
+  as well as bsign and then unmount it.
+
+    superformat /dev/fd0
+    mke2fs /dev/fd0
+    mount /dev/fd0 /floppy
+    cp bsignkey/* bsign bsign_verify /floppy
+    umount /floppy
+
+  At this point, you have two diskettes.  Both have a copy of bsign.
+  One contains only the public key while the other contains both the
+  public and private keys.  Label the diskettes appropriately and
+  toggle the read-only tabs to prevent accidental erasure.  
+
+
+  2.1.2  Sign Everything
+
+  Insert the diskette with the secret key into the floppy drive.
+
+  You may want to edit some of the parameters in the bsign_sign
+  script.  It will sign everything on the filesystem while excluding
+  some of the inappropriate directories.
+
+  When the script is ready, sign everything on the hard drive.
+
+    /floppy/bsign_sign
+
+  Bsign will ask key for the passphrase one time when it first signs a
+  file.  This whole process may take some time.  When it finishes, it
+  has undoubtedly signed /sbin/init.  It may be necessary to restart
+  init after the executable has changed to prevent a unclean shutdown.
+  Just in case, restart init.
+
+    telinit q
+
+  Unmount the diskette and store it in safe place.  You may wish to
+  make a copy of the diskette, though it isn't important since the key
+  itself is only used to verify the identity of the user who signed
+  the executables.
+
+
+  2.1.3  Setup Regular Signature Verification
+
+  In principle, you will want to leave the public-key-only diskette in
+  the floppy drive and configure a cron job to call the bsign_verify
+  regularly.  With a diskette in the floppy drive, you may want to
+  change the system BIOS to avoid attempts to boot the key diskette.
+  This setup will verify the system every night. 
+
+  Insert the public-key diskette into the floppy drive.  Check that
+  the command is correct for your system.
+
+  Make sure the following (or an equivalent) fstab entry exists to
+  mount the floppy on access.
+
+    /dev/fd0 /floppy auto defaults 0 0
+
+  Test the script.
+
+    /floppy/bsign_verify
+
+  When it completes, check the mail that it sends.  It should not
+  report any failed signatures.
+
+  Create a crontab entry to check the signatures.  Make sure this
+  is added to the root crontab.
+
+    10 1 * * * /floppy/bsign_verify
+
+  You will get an email report every night of the unsigned or
+  invalidly signed programs.
+
+
+  2.2  Hashing Executables
+
+  Protecting a host by only hashing executables is much simpler than
+  attempting to sign them.  The bsign_hash script will hash everything
+  in the filesystem.
+
+  Then, add the crontab entry to check them automatically.  On a
+  Debian system, it might look like this:
+
+    10 1 * * * /usr/share/doc/bsign/scripts/bsign_check
+
+  
+  3.  Security Considerations
+
+  While the only secure computer is one that is turned off, the need
+  for running systems overwhelms us.  The next most secure systems are
+  those that eliminate all but essential services and those where
+  network logins are protected by secure passwords.  Still, clear-text
+  passwords will be sniffed by crackers and dissatisfied employees
+  will inveigle backdoor entrances.  If a system is cracked and a
+  root-kit installed, standard system utilities are replaced by
+  patched program that conceal the intruder.  Bsign will detect these
+  files, alerting the operator that something has changed.
+
+  Bsign, statically linked and stored on the diskette, depends on gpg
+  as an external program.  When Werner Koch finishes with his
+  libgcrypt library, I'll link that in, too, so that bsign requires
+  neither dynamic libraries nor external programs.
+
+  The validation script depends on cron, and the mail subsystem.
+  Problems with these will only delay discovery of a compromised host.
+  As long as the secret key is intact, a system may be taken off-line
+  and scanned for untrusted software.  Once found, corrupted packages
+  on Debian system are easily restored
+
+    apt-get install --reinstall <package>
+
+  Without a tool like bsign, it is usually more time efficient to
+  rebuild the host from scratch than to attempt to discover and
+  erradicate untrusted software.
+
+  Once compromised, it is important to discover the means of entry.
+  Replace software with an known exploits.  In addition, the system
+  password file is forfeit as well as the ssh server key.
+
+
+  4.  Signature Format
+
+  Bsign creates an ELF section at the end of the file to contain the
+  hash and optional digital signature.  The name of the section is
+  "signature" and the type is the four byte string 0x80, 's', 'i',
+  'g'.
+
+  The signature section begins with a newline terminated
+  identification string.  The first chacter is a '#' followed by a
+  version number and a semicolon.  In version 1, the rest of the line
+  identifies the program, bsign, and its version number.
+
+  The next twenty bytes are the SHA1 hash of the file contents
+  including a signature section initialized to null bytes.  The hash
+  is written as binary data in MSB order.
+
+  Following the hash is a two byte, MSB ordered length of the digital
+  signature, if there is one.  This signature data is in the OpenPGP
+  packet format as generated by GNUPG and PGP.  At the moment, only
+  GNUPG is supported.
+
+  This format is intentionally simple since it is likely to be read
+  many more times by the machine than my humans.  Signature date
+  stamps, file permissions, or ownership bits are not included in this
+  version, but may be added by incrementing the version number and
+  restructuring the signature data.
+
+  It may appear strange that the file is hashed and then the digital
+  signature is made on this hash.  While the digital signature is
+  sufficient for verifying the validity of the hash, the original
+  intention of bsign is to detect file corruption.  files may be
+  hashed without being digitally signed.  By using a separate hash,
+  the file contents may be verified without checking the signature,
+  and therefore, without the need for gpg.
+
+
+
+
+;;; Local Variables: ***
+;;; mode: indented-text ***
+;;; End: ***
